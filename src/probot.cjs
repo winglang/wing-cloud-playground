@@ -2,12 +2,22 @@
  * @param {import("probot").Probot} app
  */
 
-async function createComment(context, commentBody) {
-	const params = context.issue({ body: commentBody });
-	await context.octokit.issues.createComment(params);
-}
+const APP_USER = "wingcloudtest[bot]";
 
-function generatePRComment(context) {
+const removeExistingComment = async (context) => {
+	const comments = await context.octokit.issues.listComments(context.issue());
+	for (const comment of comments.data) {
+		if (comment.user.login === APP_USER) {
+			await context.octokit.issues.deleteComment({
+				owner: context.repo().owner,
+				repo: context.repo().repo,
+				comment_id: comment.id,
+			});
+		}
+	}
+};
+
+const createPullRequestComment = async (context) => {
 	const repo = context.payload.repository.name;
 	const branch = context.payload.pull_request.head.ref;
 	const previewLink = `https://wing.cloud/org/${repo}/${branch}`;
@@ -43,8 +53,10 @@ function generatePRComment(context) {
 ${tableRows.join("\n")}
 `;
 
-	return commentBody;
-}
+	const params = context.issue({ body: commentBody });
+	await removeExistingComment(context);
+	await context.octokit.issues.createComment(params);
+};
 
 const appFn = async (app) => {
 	app.on("issues.opened", async (context) => {
@@ -55,11 +67,11 @@ const appFn = async (app) => {
 	});
 
 	app.on("pull_request.opened", async (context) => {
-		return createComment(context, generatePRComment(context));
+		return createPullRequestComment(context);
 	});
 
 	app.on("pull_request.edited", async (context) => {
-		return createComment(context, generatePRComment(context));
+		return createPullRequestComment(context);
 	});
 };
 
