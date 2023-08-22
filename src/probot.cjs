@@ -17,30 +17,50 @@ const removeExistingComment = async (context) => {
 	}
 };
 
-const createPullRequestComment = async (context) => {
+const getEntryPoints = async (context) => {
+	const pullRequest = context.payload.pull_request;
+	const files = await context.octokit.pulls.listFiles({
+		owner: context.repo().owner,
+		repo: context.repo().repo,
+		pull_number: pullRequest.number,
+	});
+
+	const filePaths = files.data
+		.filter((file) => file.filename.endsWith("main.w"))
+		.map((file) => file.filename);
+
+	return filePaths;
+};
+const createPullRequestComment = async (context, entryPoints) => {
 	const repo = context.payload.repository.name;
 	const branch = context.payload.pull_request.head.ref;
 	const previewLink = `https://wing.cloud/org/${repo}/${branch}`;
 
-	const entryPoint = "main.w";
 	const status = "✅ Ready";
 	const tests = [
 		"✅ [sanity](https://wing.cloud/org/repo/branch/logs/tests/sanity)",
 		"✅ [E2E](https://wing.cloud/org/repo/branch/logs/tests/E2E)",
 	];
 
-	const entryPoints = [
-		{
-			name: entryPoint,
+	const entries = entryPoints.map((entryPoint) => {
+		const filename = entryPoint.split("/").pop();
+		const githubFileLink = `https://github.com/${context.repo().owner}/${
+			context.repo().repo
+		}/blob/${context.payload.pull_request.head.ref}/${entryPoint}`;
+
+		return {
+			name: filename,
+			file: entryPoint,
+			githubFileLink,
 			status: status,
 			previewLink: previewLink,
 			tests: tests,
 			updated: new Date().toUTCString(),
-		},
-	];
+		};
+	});
 
-	const tableRows = entryPoints.map((entry) => {
-		return `| ${entry.name} | ${
+	const tableRows = entries.map((entry) => {
+		return `| [${entry.name}](${entry.githubFileLink}) | ${
 			entry.status
 		} ([logs](${previewLink}/logs/build/)) | [Visit Preview](${
 			entry.previewLink
@@ -67,11 +87,13 @@ const appFn = async (app) => {
 	});
 
 	app.on("pull_request.opened", async (context) => {
-		return createPullRequestComment(context);
+		const entryPoints = await getEntryPoints(context);
+		return createPullRequestComment(context, entryPoints);
 	});
 
 	app.on("pull_request.edited", async (context) => {
-		return createPullRequestComment(context);
+		const entryPoints = await getEntryPoints(context);
+		return createPullRequestComment(context, entryPoints);
 	});
 };
 
