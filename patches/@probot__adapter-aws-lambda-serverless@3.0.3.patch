@@ -1,0 +1,13 @@
+diff --git a/views/probot.js b/views/probot.js
+index 4d4cfa3e3ffc36a5602a5705901cba4d471a3172..32b71aea41577e5bd551d0cefe09f84691556368 100644
+--- a/views/probot.js
++++ b/views/probot.js
+@@ -1,4 +1,7 @@
+-const { name, version } = require(`${process.cwd()}/package`);
++//const { name, version } = require(`${process.cwd()}/package`);
++
++const name = "";
++const version = "";
+ 
+ module.exports.template = `
+ <!DOCTYPE html>

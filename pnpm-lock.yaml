@@ -4,10 +4,15 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@probot/adapter-aws-lambda-serverless@3.0.3':
+    hash: qpmhokola34qjl2lscvxjfhi2y
+    path: patches/@probot__adapter-aws-lambda-serverless@3.0.3.patch
+
 dependencies:
   '@probot/adapter-aws-lambda-serverless':
     specifier: ^3.0.3
-    version: 3.0.3
+    version: 3.0.3(patch_hash=qpmhokola34qjl2lscvxjfhi2y)
   probot:
     specifier: ^12.3.1
     version: 12.3.1
@@ -1836,7 +1841,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dev: false
 
-  /@probot/adapter-aws-lambda-serverless@3.0.3:
+  /@probot/adapter-aws-lambda-serverless@3.0.3(patch_hash=qpmhokola34qjl2lscvxjfhi2y):
     resolution: {integrity: sha512-zYx4pavXqxHj3ohILX2NeAcVF2eO0qmZ79/eBabSMqna+tixrlV8W6oUKkSvuyRQs5fZQjjw79ZhvK40GwhuhA==}
     dependencies:
       '@probot/get-private-key': 1.1.1
@@ -1847,6 +1852,7 @@ packages:
       - encoding
       - supports-color
     dev: false
+    patched: true
 
   /@probot/get-private-key@1.1.1:
     resolution: {integrity: sha512-hOmBNSAhSZc6PaNkTvj6CO9R5J67ODJ+w5XQlDW9w/6mtcpHWK4L+PZcW0YwVM7PpetLZjN6rsKQIR9yqIaWlA==}

@@ -6,10 +6,10 @@ class Probot {
 
 let api = new cloud.Api();
 
-let probotAppId = "372675";
-let probotSecretKey = new cloud.Secret(name: "wing.cloud/probot/secret_key");
+let probotAppId =  new cloud.Secret(name: "wing.cloud/probot/app_id") as "probotAppId";
+let probotSecretKey = new cloud.Secret(name: "wing.cloud/probot/secret_key") as "probotSecretKey";
 api.post("/", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
-    Probot.handler(probotAppId, probotSecretKey.value(), request);
+    Probot.handler(probotAppId.value(), probotSecretKey.value(), request);
 
     return cloud.ApiResponse {
         status: 200,
