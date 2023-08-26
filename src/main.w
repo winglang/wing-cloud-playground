@@ -52,7 +52,6 @@ class Users {
             userId: ex.ColumnType.STRING,
             email: ex.ColumnType.STRING,
             githubId: ex.ColumnType.STRING,
-            exists: ex.ColumnType.BOOLEAN,
         }) as "userInfo";
         this.byEmail = new ex.Table(name: "byEmail", primaryKey: "email", columns: {
             email: ex.ColumnType.STRING,
@@ -66,27 +65,29 @@ class Users {
 
     inflight createUser(email: Email, githubId: GithubId): Json {
         let userId = createUserId();
-        this.userInfo.insert(userId.id, {
-            userId: userId.id,
+        this.byEmail.insert(email.address, {
             email: email.address,
-            githubId: githubId.id,
+            userId: userId.id,
         });
         try {
-            this.byEmail.insert(email.address, {
-                email: email.address,
-                userId: userId.id,
-            });
             this.byGithubId.insert(githubId.id, {
                 githubId: githubId.id,
                 userId: userId.id,
             });
+            try {
+                this.userInfo.insert(userId.id, {
+                    userId: userId.id,
+                    email: email.address,
+                    githubId: githubId.id,
+                });
+            } catch error {
+                this.byGithubId.delete(githubId.id);
+                throw(error);
+            }
         } catch error {
-            this.userInfo.delete(userId.id);
+            this.byEmail.delete(email.address);
             throw(error);
         }
-        this.userInfo.update(userId.id, {
-            exists: true,
-        });
         return Json {
             userId: userId,
             email: email,
