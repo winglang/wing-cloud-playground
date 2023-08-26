@@ -43,49 +43,43 @@ let emailFromStr = inflight (address: str): Email => {
 bring ex;
 
 class Users {
-    userInfo: ex.Table;
-    byEmail: ex.Table;
-    byGithubId: ex.Table;
+    table: ex.Table;
 
     init() {
-        this.userInfo = new ex.Table(name: "userInfo", primaryKey: "userId", columns: {
+        this.table = new ex.Table(name: "table", primaryKey: "userId", columns: {
+            pk: ex.ColumnType.STRING,
             userId: ex.ColumnType.STRING,
             email: ex.ColumnType.STRING,
             githubId: ex.ColumnType.STRING,
-        }) as "userInfo";
-        this.byEmail = new ex.Table(name: "byEmail", primaryKey: "email", columns: {
-            email: ex.ColumnType.STRING,
-            userId: ex.ColumnType.STRING,
-        }) as "byEmail";
-        this.byGithubId = new ex.Table(name: "byGithubId", primaryKey: "githubId", columns: {
-            githubId: ex.ColumnType.STRING,
-            userId: ex.ColumnType.STRING,
-        }) as "byGithubId";
+        });
     }
 
     inflight createUser(email: Email, githubId: GithubId): Json {
         let userId = createUserId();
-        this.byEmail.insert(email.address, {
-            email: email.address,
+        let userIdPk = "userId#${userId.id}";
+        let emailPk = "email#${email.address}";
+        let githubIdPk = "githubId#${githubId.id}";
+        this.table.insert(emailPk, {
+            pk: emailPk,
             userId: userId.id,
         });
         try {
-            this.byGithubId.insert(githubId.id, {
-                githubId: githubId.id,
+            this.table.insert(githubIdPk, {
+                pk: githubIdPk,
                 userId: userId.id,
             });
             try {
-                this.userInfo.insert(userId.id, {
-                    userId: userId.id,
+                this.table.insert(userIdPk, {
+                    pk: userIdPk,
                     email: email.address,
                     githubId: githubId.id,
                 });
             } catch error {
-                this.byGithubId.delete(githubId.id);
+                this.table.delete(emailPk);
                 throw(error);
             }
         } catch error {
-            this.byEmail.delete(email.address);
+            this.table.delete(emailPk);
             throw(error);
         }
         return Json {
