@@ -1,18 +1,104 @@
 bring cloud;
 
-class Probot {  
-    extern "./probot.cjs" static inflight handler(appId: str, privateKey: str, request: cloud.ApiRequest): void;
+struct GithubId {
+    id: str;
+}
+let githubIdFromStr = inflight (id: str): GithubId => {
+    return GithubId {
+        id: id
+    };
+};
+
+struct UserId {
+    id: str;
 }
 
-let api = new cloud.Api();
-
-let probotAppId = "372675";
-let probotSecretKey = new cloud.Secret(name: "wing.cloud/probot/secret_key");
-api.post("/", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
-    Probot.handler(probotAppId, probotSecretKey.value(), request);
-
-    return cloud.ApiResponse {
-        status: 200,
-        body: Json.stringify({ ok: true })
+bring util;
+let userIdFromStr = inflight (id: str): UserId => {
+    return UserId {
+        id: id
     };
-});
+};
+let createUserId = inflight (): UserId => {
+    return UserId {
+        id: util.nanoid()
+    };
+};
+
+struct Email {
+    address: str;
+}
+let emailFromStr = inflight (address: str): Email => {
+    return Email {
+        address: address
+    };
+};
+
+// struct User {
+//     userId: UserId;
+//     email: Email;
+//     githubId: GithubId;
+// }
+
+bring ex;
+
+class Users {
+    userInfo: ex.Table;
+    byEmail: ex.Table;
+    byGithubId: ex.Table;
+
+    init() {
+        this.userInfo = new ex.Table(name: "userInfo", primaryKey: "userId", columns: {
+            userId: ex.ColumnType.STRING,
+            email: ex.ColumnType.STRING,
+            githubId: ex.ColumnType.STRING,
+            exists: ex.ColumnType.BOOLEAN,
+        }) as "userInfo";
+        this.byEmail = new ex.Table(name: "byEmail", primaryKey: "email", columns: {
+            email: ex.ColumnType.STRING,
+            userId: ex.ColumnType.STRING,
+        }) as "byEmail";
+        this.byGithubId = new ex.Table(name: "byGithubId", primaryKey: "githubId", columns: {
+            githubId: ex.ColumnType.STRING,
+            userId: ex.ColumnType.STRING,
+        }) as "byGithubId";
+    }
+
+    inflight createUser(email: Email, githubId: GithubId): Json {
+        let userId = createUserId();
+        this.userInfo.insert(userId.id, {
+            userId: userId.id,
+            email: email.address,
+            githubId: githubId.id,
+        });
+        try {
+            this.byEmail.insert(email.address, {
+                email: email.address,
+                userId: userId.id,
+            });
+            this.byGithubId.insert(githubId.id, {
+                githubId: githubId.id,
+                userId: userId.id,
+            });
+        } catch error {
+            this.userInfo.delete(userId.id);
+            throw(error);
+        }
+        this.userInfo.update(userId.id, {
+            exists: true,
+        });
+        return Json {
+            userId: userId,
+            email: email,
+            githubId: githubId,
+        };
+    }
+}
+
+let users = new Users();
+
+new cloud.Function(inflight (): Json => {
+    let email = emailFromStr("a@a.a");
+    let githubId = githubIdFromStr("12");
+    return users.createUser(email, githubId);
+}) as "CreateUser";
