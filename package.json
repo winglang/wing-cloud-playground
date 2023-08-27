@@ -5,7 +5,8 @@
 	},
 	"dependencies": {
 		"@probot/adapter-aws-lambda-serverless": "^3.0.3",
+		"@winglang/sdk": "^0.26.5",
 		"probot": "^12.3.1",
-		"winglang": "^0.24.91"
+		"winglang": "^0.26.5"
 	}
 }

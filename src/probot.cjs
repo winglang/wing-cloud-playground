@@ -1,30 +1,33 @@
-/**
- * @param {import("probot").Probot} app
- */
-const appFn = async (app) => {
-	app.on("issues.opened", async (context) => {
-		const issueComment = context.issue({
-			body: "Thanks for opening this issue!",
-		});
-		await context.github.issues.createComment(issueComment);
-	});
+const { TableClient } = require("@winglang/sdk/lib/shared-aws/table.inflight.js");
+
+const getTableDetails = (name) => {
+	let tableName;
+	let columns;
+	let pk;
+	for (const env in process.env) {
+		if (process.env[env].startsWith(name)) {
+			tableName = process.env[env];
+			columns = process.env[Object.keys(process.env).find(e => e.startsWith(env) && e.endsWith("COLUMNS"))];
+			pk = process.env[Object.keys(process.env).find(e => e.startsWith(env) && e.endsWith("PRIMARY_KEY"))];
+		}
+	}
+	return { tableName, columns, pk }
 };
 
-const {
-	createLambdaFunction,
-	createProbot,
-} = require("@probot/adapter-aws-lambda-serverless");
+module.exports.insert = async (email, githubId, tableName) => {
+	const table = getTableDetails(tableName);
+	client = new TableClient(table.tableName, table.pk, table.columns);
+	await client.insert(email, {
+			pk: githubId,
+			userId: email,
+			githubId
+	})
+	console.log('row inserted');
+};
 
-let webhooks;
-module.exports.handler = async (appId, privateKey, event) => {
-	webhooks ??= createLambdaFunction(appFn, {
-		probot: createProbot({
-			overrides: {
-				appId,
-				privateKey,
-			},
-		}),
-	});
-
-	return webhooks(event);
+module.exports.get = async (email, tableName) => {
+	const table = getTableDetails(tableName);
+	client = new TableClient(table.tableName, table.pk, table.columns);
+	const row = await client.get(email);
+	console.log('row fetched', row);
 };

@@ -1,18 +1,32 @@
 bring cloud;
+bring util;
+bring ex;
 
-class Probot {  
-    extern "./probot.cjs" static inflight handler(appId: str, privateKey: str, request: cloud.ApiRequest): void;
+class Utils {
+    extern "./probot.cjs" static inflight insert(email: str, githubId: str, tableName: str): void;
+    extern "./probot.cjs" static inflight get(email: str, tableName: str): void;
 }
 
-let api = new cloud.Api();
+class Users {
+    table: ex.Table;
 
-let probotAppId = "372675";
-let probotSecretKey = new cloud.Secret(name: "wing.cloud/probot/secret_key");
-api.post("/", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
-    Probot.handler(probotAppId, probotSecretKey.value(), request);
+    init() {
+        this.table = new ex.Table(name: "users", primaryKey: "userId", columns: {
+            pk: ex.ColumnType.STRING,
+            userId: ex.ColumnType.STRING,
+            email: ex.ColumnType.STRING,
+            githubId: ex.ColumnType.STRING,
+        });
+    }
+}
 
-    return cloud.ApiResponse {
-        status: 200,
-        body: Json.stringify({ ok: true })
-    };
-});
+let users = new Users();
+
+test "CreateUser" {
+    // for permissions
+    users.table.insert;
+    users.table.get;
+
+    Utils.insert("a@a.a", "12", users.table.name);
+    Utils.get("a@a.a", users.table.name);
+}
