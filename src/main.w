@@ -75,7 +75,7 @@ class Users {
                     githubId: githubId.id,
                 });
             } catch error {
-                this.table.delete(emailPk);
+                this.table.delete(githubIdPk);
                 throw(error);
             }
         } catch error {
