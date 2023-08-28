@@ -46,7 +46,7 @@ class Users {
     table: ex.Table;
 
     init() {
-        this.table = new ex.Table(name: "table", primaryKey: "userId", columns: {
+        this.table = new ex.Table(name: "table", primaryKey: "pk", columns: {
             pk: ex.ColumnType.STRING,
             userId: ex.ColumnType.STRING,
             email: ex.ColumnType.STRING,
